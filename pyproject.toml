@@ -7,7 +7,7 @@ name = "market-data-simulator"
 version = "1.0.0"
 description = "High-performance real-time market data simulator"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.24.0"]
+dependencies = ["numpy>=1.24.0", "rich>=13.0.0"]
 
 [project.scripts]
 market-simulator = "src.main:main"

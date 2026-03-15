@@ -27,35 +27,35 @@ import sys
 import time
 from typing import NoReturn
 
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.panel import Panel
+from rich.table import Table
+from rich import box
+
 from .config import SimulatorConfig, DEFAULT_INSTRUMENTS, DEFAULT_INITIAL_PRICES
 from .generator import MarketDataGenerator, MarketTick
 from .streamer import MarketDataStreamer
 from .subscriber import Subscriber
 
+console = Console()
+
 
 def setup_logging(level: str) -> None:
-    """
-    Configure logging for the application.
-
-    Args:
-        level: Logging level (DEBUG, INFO, WARNING, ERROR).
-    """
     numeric_level = getattr(logging, level.upper(), logging.INFO)
 
-    # Custom format for trading systems - includes microsecond precision
-    formatter = logging.Formatter(
-        fmt="%(asctime)s.%(msecs)03d | %(levelname)-8s | %(name)-20s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+    handler = RichHandler(
+        console=console,
+        show_time=True,
+        show_path=False,
+        rich_tracebacks=True,
+        markup=True,
     )
-
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()
     root_logger.setLevel(numeric_level)
     root_logger.addHandler(handler)
 
-    # Reduce noise from other libraries
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 
@@ -236,17 +236,17 @@ async def run_simulator(
     """
     logger = logging.getLogger(__name__)
 
-    logger.info("=" * 60)
-    logger.info("Market Data Simulator Starting")
-    logger.info("=" * 60)
-    logger.info(f"Instruments: {', '.join(config.instruments)}")
-    logger.info(f"Tick rate: {config.tick_rate_per_instrument}/s per instrument")
-    logger.info(f"Total target rate: {config.total_tick_rate:,}/s")
-    logger.info(f"Subscribers: {config.num_subscribers}")
-    logger.info(f"Mode: {'Benchmark (max speed)' if benchmark else 'Real-time'}")
+    config_table = Table(box=box.SIMPLE, show_header=False, padding=(0, 2))
+    config_table.add_column("Key", style="bold cyan")
+    config_table.add_column("Value", style="white")
+    config_table.add_row("Instruments", ", ".join(config.instruments))
+    config_table.add_row("Tick Rate", f"{config.tick_rate_per_instrument:,}/s per instrument")
+    config_table.add_row("Total Target Rate", f"{config.total_tick_rate:,}/s")
+    config_table.add_row("Subscribers", str(config.num_subscribers))
+    config_table.add_row("Mode", "[yellow]Benchmark (max speed)[/yellow]" if benchmark else "[green]Real-time[/green]")
     if duration > 0:
-        logger.info(f"Duration: {duration}s")
-    logger.info("=" * 60)
+        config_table.add_row("Duration", f"{duration}s")
+    console.print(Panel(config_table, title="[bold green]Market Data Simulator[/bold green]", border_style="green"))
 
     # Create streamer
     streamer = MarketDataStreamer(config, seed=seed)
@@ -275,23 +275,28 @@ async def run_simulator(
         await streamer.stop()
 
     # Final summary
-    logger.info("=" * 60)
-    logger.info("Final Summary")
-    logger.info("=" * 60)
-    logger.info(f"Total published: {streamer.total_published:,}")
-    logger.info(f"Total dropped: {streamer.total_dropped:,}")
-    logger.info(f"Average throughput: {streamer.throughput:,.0f} msg/s")
+    summary_table = Table(box=box.SIMPLE, show_header=False, padding=(0, 2))
+    summary_table.add_column("Metric", style="bold cyan")
+    summary_table.add_column("Value", style="bold white")
+    summary_table.add_row("Total Published", f"{streamer.total_published:,} ticks")
+    summary_table.add_row(
+        "Total Dropped",
+        "[green]0[/green]" if streamer.total_dropped == 0 else f"[red]{streamer.total_dropped:,}[/red]",
+    )
+    summary_table.add_row("Average Throughput", f"{streamer.throughput:,.0f} msg/s")
+    console.print(Panel(summary_table, title="[bold green]Final Summary[/bold green]", border_style="green"))
 
-    # Subscriber summaries
+    sub_table = Table(box=box.SIMPLE_HEAVY, padding=(0, 2))
+    sub_table.add_column("Subscriber", style="bold cyan")
+    sub_table.add_column("Received", justify="right", style="white")
+    sub_table.add_column("Dropped", justify="right")
+    sub_table.add_column("Gaps", justify="right")
     for sub in subscribers:
         stats = sub.stats
-        logger.info(
-            f"{sub.id}: received={stats.messages_received:,}, "
-            f"dropped={stats.messages_dropped:,}, "
-            f"gaps={stats.gaps_detected}"
-        )
-
-    logger.info("=" * 60)
+        dropped = "[green]0[/green]" if stats.messages_dropped == 0 else f"[red]{stats.messages_dropped:,}[/red]"
+        gaps = "[green]0[/green]" if stats.gaps_detected == 0 else f"[red]{stats.gaps_detected}[/red]"
+        sub_table.add_row(sub.id, f"{stats.messages_received:,}", dropped, gaps)
+    console.print(Panel(sub_table, title="[bold cyan]Subscriber Stats[/bold cyan]", border_style="cyan"))
 
 
 def main() -> NoReturn:
