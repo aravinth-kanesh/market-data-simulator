@@ -27,7 +27,7 @@ import sys
 import time
 from typing import NoReturn
 
-from .config import SimulatorConfig, DEFAULT_INSTRUMENTS
+from .config import SimulatorConfig, DEFAULT_INSTRUMENTS, DEFAULT_INITIAL_PRICES
 from .generator import MarketDataGenerator, MarketTick
 from .streamer import MarketDataStreamer
 from .subscriber import Subscriber
@@ -164,8 +164,8 @@ def create_config(args: argparse.Namespace) -> SimulatorConfig:
     # Build initial prices for custom instruments
     initial_prices = {}
     for symbol in instruments:
-        if symbol in SimulatorConfig.initial_prices:
-            initial_prices[symbol] = SimulatorConfig.initial_prices[symbol]
+        if symbol in DEFAULT_INITIAL_PRICES:
+            initial_prices[symbol] = DEFAULT_INITIAL_PRICES[symbol]
         else:
             # Default price for unknown symbols
             initial_prices[symbol] = 100.0
