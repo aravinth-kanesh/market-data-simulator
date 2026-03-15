@@ -284,7 +284,7 @@ async def run_simulator(
         "[green]0[/green]" if streamer.total_dropped == 0 else f"[red]{streamer.total_dropped:,}[/red]",
     )
     summary_table.add_row("Average Throughput", f"{streamer.throughput:,.0f} msg/s")
-    console.print(Panel(summary_table, title="[bold green]Final Summary[/bold green]", border_style="green"))
+    console.print(Panel(summary_table, title="[bold green]Final Summary[/bold green]", border_style="green", width=60))
 
     sub_table = Table(box=box.SIMPLE_HEAVY, padding=(0, 2))
     sub_table.add_column("Subscriber", style="bold cyan")
@@ -296,7 +296,7 @@ async def run_simulator(
         dropped = "[green]0[/green]" if stats.messages_dropped == 0 else f"[red]{stats.messages_dropped:,}[/red]"
         gaps = "[green]0[/green]" if stats.gaps_detected == 0 else f"[red]{stats.gaps_detected}[/red]"
         sub_table.add_row(sub.id, f"{stats.messages_received:,}", dropped, gaps)
-    console.print(Panel(sub_table, title="[bold cyan]Subscriber Stats[/bold cyan]", border_style="cyan"))
+    console.print(Panel(sub_table, title="[bold cyan]Subscriber Stats[/bold cyan]", border_style="cyan", width=60))
 
 
 def main() -> NoReturn:
