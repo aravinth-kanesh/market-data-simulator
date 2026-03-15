@@ -224,10 +224,12 @@ Typical results on Apple M1:
 
 | Metric | Value |
 |--------|-------|
-| Max Throughput | 150,000+ msg/s |
-| Latency p50 | 50-100 μs |
-| Latency p99 | 200-500 μs |
-| Latency p99.9 | 500-1000 μs |
+| Raw Generator Throughput (batch) | 1,400,000+ ticks/s |
+| End-to-End Throughput (1 subscriber) | 366,000+ msg/s |
+| End-to-End Throughput (10 subscribers) | 127,000+ msg/s |
+| Latency p50 | 45–84 μs |
+| Latency p99 | 167–283 μs |
+| Latency p99.9 | 327–853 μs |
 | Memory (10 subscribers) | ~50 MB |
 
 ## Market Data Format
